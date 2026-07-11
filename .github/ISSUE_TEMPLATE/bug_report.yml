@@ -1,0 +1,40 @@
+name: "Bug Report"
+description: Report unexpected behavior in ais
+title: "[BUG] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: What happened and what you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: "Steps to Reproduce"
+      placeholder: |
+        1. Run 'ais search -a opencode -s ...'
+        2. See error
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "ais version"
+      placeholder: "ais --version"
+
+  - type: input
+    id: os
+    attributes:
+      label: "OS"
+      placeholder: "e.g. Fedora 42, macOS 15, Ubuntu 24.04"
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: "Output / Logs"
+      render: shell
