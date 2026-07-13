@@ -4,7 +4,7 @@
 ![Release](https://img.shields.io/github/v/release/mrbrandao/ais)
 ![Go version](https://img.shields.io/github/go-mod/go-version/mrbrandao/ais)
 ![License](https://img.shields.io/github/license/mrbrandao/ais)
-![Coverage](https://img.shields.io/badge/coverage-0%25-lightgrey)
+![Coverage](https://img.shields.io/badge/coverage-35.0%-lightgrey)
 
 Search, export, and manage sessions across AI assistants
 from a single CLI.
