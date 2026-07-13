@@ -45,3 +45,9 @@ tags
 ### Project ###
 bin/
 coverage.out
+
+### AI ###
+.lola
+.superpowers
+.claude
+.opencode
