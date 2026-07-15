@@ -7,6 +7,7 @@
 | Go 1.25+ | yes | https://go.dev/dl |
 | pre-commit | yes | https://pre-commit.com |
 | golangci-lint | yes | `make dev-deps` |
+| git-cliff | for releases | https://git-cliff.org |
 | snyk | for pre-commit | `npm install -g snyk` |
 | podman | for containers | https://podman.io |
 | goreleaser | for releases | https://goreleaser.com |
@@ -14,8 +15,8 @@
 ## Setup
 
 ```bash
-git clone https://github.com/mrbrandao/ais.git
-cd ais
+git clone https://github.com/mrbrandao/mental.git
+cd mental
 make dev-deps   # installs golangci-lint
 make hooks      # installs pre-commit hooks
 ```
@@ -23,7 +24,7 @@ make hooks      # installs pre-commit hooks
 ## Daily workflow
 
 ```bash
-make          # build bin/ais
+make          # build bin/mental
 make test     # run tests
 make lint     # run linter
 make fmt      # format code
@@ -56,29 +57,43 @@ snyk auth      # authenticate once
 make container-build
 
 # Extract binary without Go installed
-make container-binary  # produces bin/ais
+make container-binary  # produces bin/mental
 
-# Run ais via container
+# Run mental via container
 make container-run ARGS="search -a opencode -s topic"
 ```
 
 ## Releases
 
-Releases are automated via goreleaser on tag push:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-GitHub Actions runs goreleaser and uploads binaries
-to the GitHub Release page.
+Releases are automated via goreleaser on tag push.
+The release workflow runs git-cliff to update CHANGELOG.md
+(Keep a Changelog format), then goreleaser to build binaries
+and create the GitHub release with auto-generated notes.
 
 Dry-run locally:
 ```bash
 make release-dry
 ```
 
+## Branch workflow
+
+```bash
+# Create feature branch
+git checkout -b feat/my-feature
+
+# ... make commits (max 150 lines each) ...
+
+# Integrate to main (linear history, no merge commits)
+git checkout main
+git rebase feat/my-feature
+git branch -d feat/my-feature
+```
+
 ## Adding a provider
 
 See `AGENTS.md` — "How to add a new assistant backend".
+
+## Adding an extension
+
+See `AGENTS.md` — "How to create an external extension"
+and `docs/dev-guide/extension-development.md`.

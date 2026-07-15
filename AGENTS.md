@@ -3,28 +3,32 @@
 Guidance for coding agents and contributors
 working in this repository.
 
-## What is ais
+## What is mental
 
-`ais` is an AI session manager CLI that searches
-OpenCode sessions from the terminal. The provider
-architecture is designed to add more assistants
-in future releases.
+`mental` is a cross-session memory and AI session manager CLI.
+It persists LLM context across sessions, tracks tasks, and lets
+multiple agents share knowledge through a file-based protocol.
+The extension architecture supports built-in and external plugins.
 
-Binary: `ais` | Module: `github.com/mrbrandao/ais`
+Binary: `mental` | Module: `github.com/mrbrandao/mental`
 
 ## Architecture
 
-Commands call a `provider.Provider` interface.
-Each assistant backend is an isolated package.
-Output formatting is independent of both.
-
 ```
-cmd/           Cobra commands — thin, no logic
+cmd/                Cobra commands — thin, no logic
 internal/
-  model/       Pure data types (Session, Query)
-  provider/    Provider interface + per-assistant pkg
-    opencode/  OpenCode SQLite backend
-  output/      Formatters: table (pterm), json, plain
+  model/            Session search types (Session, Query)
+  provider/         Provider interface + per-assistant pkg
+    opencode/       OpenCode SQLite backend
+  output/           Formatters: table (pterm), json, plain
+  config/           XDG resolution + viper config
+  extensions/       Extension system
+    extension.go    Extension interface + manifest types
+    manager.go      Registry: internal + XDG external scan
+    runner.go       External subprocess execution
+    mem/            Built-in mem extension
+      config.yaml   Embedded default layout config
+      types.go      Checkpoint, Task, Topic, ProjectContext
 ```
 
 ## How to add a new assistant backend
@@ -56,15 +60,27 @@ internal/
 
 Both changes live in `internal/output/output.go`.
 
+## How to create an external extension
+
+External extensions are standalone executables discovered
+in `$MENTAL_DIR/extensions/<name>/`. Each must provide:
+
+1. An `extension.yaml` manifest (name, type, executable, mode)
+2. An executable binary that reads JSON from stdin and writes
+   JSON to stdout (structured mode), or owns the terminal
+   (passthrough mode)
+
+See `docs/dev-guide/extension-development.md` for the full
+contract, environment variables, and worked examples.
+
 ## Build and test
 
 ```bash
-make            # build bin/ais
+make            # build bin/mental
 make test       # go test -race ./...
 make lint       # golangci-lint run ./...
 make coverage   # coverage report
 make install    # install to /usr/local/bin
-sudo make install        # system-wide
 PREFIX=~/.local make install  # user-local
 ```
 
@@ -78,6 +94,8 @@ See `docs/dev.md` for full developer setup.
 - context.Context always first param
 - defer for all cleanup (db.Close, rows.Close)
 - No else after return
+- Functions small and single-purpose
+- Every exported symbol has a godoc comment
 - Table-driven tests in `_test.go` files
 - No CGO — use modernc.org/sqlite for SQLite
 
