@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -138,10 +139,18 @@ var memTaskAddCmd = &cobra.Command{
 	Use:   "add <title>",
 	Short: "Add a task to the current project",
 	Args:  cobra.MinimumNArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
-		fmt.Printf("mental mem task add: %q (not yet implemented)\n",
-			args[0])
-		return nil
+	RunE: func(cmd *cobra.Command, args []string) error {
+		project, err := cmd.Flags().GetString("project")
+		if err != nil {
+			return err
+		}
+		cfg, mentalDir, err := loadMemConfig()
+		if err != nil {
+			return err
+		}
+		return mem.AddTask(cfg, mentalDir, project,
+			strings.Join(args, " "),
+		)
 	},
 }
 
@@ -149,23 +158,47 @@ var memTaskDoneCmd = &cobra.Command{
 	Use:   "done <id>",
 	Short: "Mark a task as done",
 	Args:  cobra.ExactArgs(1),
-	RunE: func(_ *cobra.Command, args []string) error {
-		fmt.Printf("mental mem task done: %s (not yet implemented)\n",
-			args[0])
-		return nil
+	RunE: func(cmd *cobra.Command, args []string) error {
+		project, err := cmd.Flags().GetString("project")
+		if err != nil {
+			return err
+		}
+		cfg, mentalDir, err := loadMemConfig()
+		if err != nil {
+			return err
+		}
+		return mem.DoneTask(cfg, mentalDir, project, args[0])
 	},
 }
 
 var memTaskListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all tasks for the current project",
-	RunE: func(_ *cobra.Command, _ []string) error {
-		fmt.Println("mental mem task list (not yet implemented)")
-		return nil
+	RunE: func(cmd *cobra.Command, _ []string) error {
+		project, err := cmd.Flags().GetString("project")
+		if err != nil {
+			return err
+		}
+		cfg, mentalDir, err := loadMemConfig()
+		if err != nil {
+			return err
+		}
+		return mem.ListTasks(cfg, mentalDir, project)
 	},
 }
 
 func init() {
+	// --project flag required for all task subcommands.
+	for _, cmd := range []*cobra.Command{
+		memTaskAddCmd, memTaskDoneCmd, memTaskListCmd,
+	} {
+		cmd.Flags().String(
+			"project", "",
+			"Project name (required)",
+		)
+		_ = cmd.MarkFlagRequired("project")
+	}
+
 	memTaskCmd.AddCommand(memTaskAddCmd)
 	memTaskCmd.AddCommand(memTaskDoneCmd)
 	memTaskCmd.AddCommand(memTaskListCmd)
