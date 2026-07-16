@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mrbrandao/mental/cmd/session"
 )
 
 var rootCmd = &cobra.Command{
@@ -16,6 +18,10 @@ export, and manage AI assistant sessions
 (opencode, claude, gemini, ...).
 
 Docs: https://github.com/mrbrandao/mental`,
+}
+
+func init() {
+	rootCmd.AddCommand(session.Cmd)
 }
 
 // Execute runs the root command.

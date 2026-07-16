@@ -1,4 +1,4 @@
-package cmd
+package session
 
 import (
 	"context"
@@ -16,11 +16,11 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search sessions for an AI assistant",
-	Example: `  mental search -a opencode -s "git-release"
-  mental search -a opencode -s "foo" -s "bar"
-  mental search -a opencode --type=deep --branch main
-  mental search -a opencode --dir /path/to/project
-  mental search -a opencode --output json`,
+	Example: `  mental session search -a opencode -s "git-release"
+  mental session search -a opencode -s "foo" -s "bar"
+  mental session search -a opencode --type=deep --branch main
+  mental session search -a opencode --dir /path/to/project
+  mental session search -a opencode --output json`,
 	RunE: runSearch,
 }
 
@@ -39,7 +39,7 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(searchCmd)
+	Cmd.AddCommand(searchCmd)
 
 	f := searchCmd.Flags()
 	f.StringVarP(
@@ -110,42 +110,35 @@ func buildQuery() (model.Query, error) {
 	if flagDateFrom != "" {
 		t, err := time.Parse("2006-01-02", flagDateFrom)
 		if err != nil {
-			return q, fmt.Errorf(
-				"--date-from: %w", err,
-			)
+			return q, fmt.Errorf("--date-from: %w", err)
 		}
 		q.DateFrom = t
 	}
 	if flagDateTo != "" {
 		t, err := time.Parse("2006-01-02", flagDateTo)
 		if err != nil {
-			return q, fmt.Errorf(
-				"--date-to: %w", err,
-			)
+			return q, fmt.Errorf("--date-to: %w", err)
 		}
 		q.DateTo = t
 	}
 	return q, nil
 }
 
-// resolveProvider returns the Provider for the given
-// assistant name. Add new cases here as backends grow.
+// resolveProvider returns the Provider for the given assistant name.
+// Add new cases here as backends grow.
 func resolveProvider(
 	assistant string,
 ) (interface {
 	Name() string
-	Search(
-		context.Context,
-		model.Query,
-	) ([]model.Session, error)
+	Search(context.Context, model.Query) ([]model.Session, error)
 }, error) {
 	switch assistant {
 	case "opencode":
 		return opencode.New(), nil
 	default:
 		fmt.Fprintf(os.Stderr,
-			"unknown assistant %q\n"+
-				"supported: opencode\n", assistant,
+			"unknown assistant %q\nsupported: opencode\n",
+			assistant,
 		)
 		return nil, fmt.Errorf(
 			"unsupported assistant: %s", assistant,
