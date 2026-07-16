@@ -1,5 +1,9 @@
 // Package output renders search results in multiple
-// formats: table (default), json, plain.
+// formats: table (default), json, plain, wide.
+//
+// The "wide" format is equivalent to "table" but shows full session
+// IDs instead of the short (12-char) version. This follows the
+// kubectl -o wide convention for showing more detail.
 package output
 
 import (
@@ -18,11 +22,19 @@ type Formatter interface {
 	Print(sessions []model.Session, assistant string)
 }
 
-// New returns a Formatter for the given format string.
-// Recognised values: "table", "json", "plain".
-// Defaults to table for unrecognised values.
+// New returns a Formatter for the given -o/--output value.
+//
+// Recognised values:
+//   - "table"  — pterm table, short IDs (default)
+//   - "wide"   — pterm table, full IDs (kubectl -o wide convention)
+//   - "json"   — JSON array, full IDs (machine-readable)
+//   - "plain"  — tab-separated, full IDs (pipeline-friendly)
+//
+// Unknown values fall back to "table".
 func New(format string) Formatter {
 	switch format {
+	case "wide":
+		return &tableFmt{wide: true}
 	case "json":
 		return &jsonFmt{}
 	case "plain":
@@ -36,15 +48,14 @@ func New(format string) Formatter {
 func restoreCmd(assistant, id string) string {
 	switch assistant {
 	case "opencode":
-		return fmt.Sprintf(
-			"opencode --session %s", id,
-		)
+		return fmt.Sprintf("opencode --session %s", id)
 	default:
 		return id
 	}
 }
 
-// shortID returns first 12 chars of the session ID.
+// shortID returns the first 12 characters of the session ID.
+// Used by default to keep tables narrow.
 func shortID(id string) string {
 	if len(id) > 12 {
 		return id[:12]
@@ -59,7 +70,11 @@ func fmtTime(t time.Time) string {
 
 // --- table formatter ---
 
-type tableFmt struct{}
+// tableFmt renders sessions as a pterm table.
+// When wide is true, full session IDs are shown (like kubectl -o wide).
+type tableFmt struct {
+	wide bool
+}
 
 func (f *tableFmt) Print(
 	sessions []model.Session,
@@ -81,6 +96,10 @@ func (f *tableFmt) Print(
 		{"#", "ID", "Title", "Dir", "Updated"},
 	}
 	for i, s := range sessions {
+		id := shortID(s.ID)
+		if f.wide {
+			id = s.ID
+		}
 		dir := s.Dir
 		if len(dir) > 30 {
 			dir = "..." + dir[len(dir)-27:]
@@ -91,7 +110,7 @@ func (f *tableFmt) Print(
 		}
 		data = append(data, []string{
 			fmt.Sprintf("%d", i+1),
-			shortID(s.ID),
+			id,
 			title,
 			dir,
 			fmtTime(s.UpdatedAt),
@@ -102,20 +121,19 @@ func (f *tableFmt) Print(
 		WithHasHeader().
 		WithData(data).
 		Render(); err != nil {
-		fmt.Fprintf(os.Stderr,
-			"table render: %v\n", err,
-		)
+		fmt.Fprintf(os.Stderr, "table render: %v\n", err)
 	}
 
 	pterm.Println()
 	pterm.Info.Println(
-		"Restore hint: " +
-			restoreCmd(assistant, "<ID>"),
+		"Restore: " + restoreCmd(assistant, "<ID>"),
 	)
 }
 
 // --- json formatter ---
 
+// jsonFmt renders sessions as a JSON array with full IDs.
+// Intended for machine consumption and pipeline use.
 type jsonFmt struct{}
 
 func (f *jsonFmt) Print(
@@ -141,9 +159,7 @@ func (f *jsonFmt) Print(
 	}
 	b, err := json.MarshalIndent(rows, "", "  ")
 	if err != nil {
-		fmt.Fprintf(os.Stderr,
-			"json marshal: %v\n", err,
-		)
+		fmt.Fprintf(os.Stderr, "json marshal: %v\n", err)
 		return
 	}
 	fmt.Println(string(b))
@@ -151,6 +167,8 @@ func (f *jsonFmt) Print(
 
 // --- plain formatter ---
 
+// plainFmt renders sessions as tab-separated lines with full IDs.
+// Intended for shell pipelines and scripting.
 type plainFmt struct{}
 
 func (f *plainFmt) Print(

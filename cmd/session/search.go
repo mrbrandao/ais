@@ -70,7 +70,7 @@ func init() {
 	)
 	f.StringVarP(
 		&flagOutput, "output", "o", "table",
-		"Output format: table|json|plain",
+		"Output: table|wide|json|plain (-o wide shows full IDs)",
 	)
 }
 

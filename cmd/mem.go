@@ -1,16 +1,18 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
 	"github.com/mrbrandao/mental/internal/config"
 	"github.com/mrbrandao/mental/internal/extensions/mem/memx"
-	"github.com/mrbrandao/mental/internal/extensions/session/opencode"
+	ocpkg "github.com/mrbrandao/mental/internal/extensions/session/opencode"
 )
 
 // memEngine is the --engine flag value. Defaults to config value (memx).
@@ -213,13 +215,28 @@ func runSave(cmd *cobra.Command, _ []string) error {
 func runSaveProvider(cfg *memx.Config, mentalDir string) error {
 	switch saveFlagAgent {
 	case "opencode":
-		input, err := opencode.Extract(
+		input, err := ocpkg.Extract(
 			saveFlagSession,
 			saveFlagProject,
 			"", // use default DB path
 			"", // use default diff dir
 		)
 		if err != nil {
+			// Multiple matches: show which sessions match and
+			// instruct the user to get the full ID with -o wide.
+			var multi *ocpkg.ErrMultipleMatches
+			if errors.As(err, &multi) {
+				pterm.Warning.Printfln(
+					"Session prefix %q is ambiguous — %d sessions match:",
+					multi.Prefix, len(multi.IDs),
+				)
+				pterm.Println(multi.Detail())
+				pterm.Info.Println(
+					"Run: mental session search -o wide -s " +
+						multi.Prefix + "  to see full IDs",
+				)
+				return fmt.Errorf("ambiguous session ID")
+			}
 			return fmt.Errorf("extract session: %w", err)
 		}
 
@@ -229,7 +246,7 @@ func runSaveProvider(cfg *memx.Config, mentalDir string) error {
 			return nil
 		}
 
-			// Raw checkpoint mode: write without LLM synthesis.
+		// Raw checkpoint mode: write without LLM synthesis.
 		return saveRawCheckpoint(cfg, mentalDir, input)
 
 	default:

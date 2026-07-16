@@ -115,7 +115,10 @@ func Extract(
 	}, nil
 }
 
-// fetchSession retrieves a single session row from OpenCode's SQLite.
+// fetchSession retrieves a session from OpenCode's SQLite.
+// It tries an exact match first. If no exact match, it falls back to
+// a prefix match (useful when the user copies a short ID from the table).
+// Returns ErrMultipleMatches if the prefix is ambiguous.
 func fetchSession(dbPath, sessionID string) (sessionRow, error) {
 	db, err := sql.Open("sqlite", dbPath)
 	if err != nil {
@@ -123,22 +126,77 @@ func fetchSession(dbPath, sessionID string) (sessionRow, error) {
 	}
 	defer db.Close()
 
-	var row sessionRow
-	err = db.QueryRow(
-		`SELECT id, title, directory, time_updated
-		 FROM session WHERE id = ?`,
-		sessionID,
-	).Scan(&row.id, &row.title, &row.directory, &row.updatedMS)
-
-	switch {
-	case err == sql.ErrNoRows:
-		return sessionRow{}, fmt.Errorf(
-			"session %q not found in OpenCode database", sessionID,
-		)
-	case err != nil:
+	// 1. Exact match.
+	row, err := fetchExact(db, sessionID)
+	if err == nil {
+		return row, nil
+	}
+	if err != sql.ErrNoRows {
 		return sessionRow{}, fmt.Errorf("query session: %w", err)
 	}
-	return row, nil
+
+	// 2. Prefix match fallback.
+	rows, err := fetchByPrefix(db, sessionID)
+	if err != nil {
+		return sessionRow{}, fmt.Errorf("prefix query: %w", err)
+	}
+
+	switch len(rows) {
+	case 0:
+		return sessionRow{}, fmt.Errorf(
+			"session %q not found — run: mental session search",
+			sessionID,
+		)
+	case 1:
+		return rows[0], nil
+	default:
+		ids := make([]string, len(rows))
+		titles := make([]string, len(rows))
+		for i, r := range rows {
+			ids[i] = r.id
+			titles[i] = r.title
+		}
+		return sessionRow{}, &ErrMultipleMatches{
+			Prefix: sessionID,
+			IDs:    ids,
+			Titles: titles,
+		}
+	}
+}
+
+// fetchExact returns the session row with the given exact ID.
+func fetchExact(db *sql.DB, id string) (sessionRow, error) {
+	var row sessionRow
+	err := db.QueryRow(
+		`SELECT id, title, directory, time_updated
+		 FROM session WHERE id = ?`, id,
+	).Scan(&row.id, &row.title, &row.directory, &row.updatedMS)
+	return row, err
+}
+
+// fetchByPrefix returns up to 3 session rows whose ID starts with prefix.
+func fetchByPrefix(db *sql.DB, prefix string) ([]sessionRow, error) {
+	rows, err := db.Query(
+		`SELECT id, title, directory, time_updated
+		 FROM session WHERE id LIKE ? LIMIT 3`,
+		prefix+"%",
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []sessionRow
+	for rows.Next() {
+		var r sessionRow
+		if err := rows.Scan(
+			&r.id, &r.title, &r.directory, &r.updatedMS,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, r)
+	}
+	return results, rows.Err()
 }
 
 // extractFiles reads session_diff/<sessionID>.json and returns
