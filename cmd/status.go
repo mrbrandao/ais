@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 )
 
@@ -15,7 +14,7 @@ var statusCmd = &cobra.Command{
 MEMORY.md summary, task counts by status, and the most recent
 checkpoint. Useful at session start to orient quickly.`,
 	RunE: func(_ *cobra.Command, _ []string) error {
-		fmt.Println("mental status (not yet implemented)")
+		pterm.Info.Println("mental status (not yet implemented)")
 		return nil
 	},
 }
