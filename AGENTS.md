@@ -26,8 +26,12 @@ mental mem save < /tmp/mental-save.txt
 mental mem search "<topic>" --project mental
 ```
 
-See `.opencode/skills/mental/SKILL.md` for the full trigger
-vocabulary and save input format.
+See `skills/mental/SKILL.md` for the full trigger vocabulary
+and save input format. Install via lola:
+```bash
+lola mod add https://github.com/mrbrandao/mental.git#subdirectory=skills
+lola install mental
+```
 
 ## What is mental
 

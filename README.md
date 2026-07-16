@@ -93,6 +93,20 @@ mental extensions describe opencode
 | claude   | —             | —              | planned   |
 | cursor   | —             | —              | planned   |
 
+## Skills (LLM integration)
+
+mental ships a skill that teaches any LLM assistant when and how to
+invoke it. Install via [lola](https://github.com/mrbrandao/lola):
+
+```bash
+lola mod add https://github.com/mrbrandao/mental.git#subdirectory=skills
+lola install mental
+```
+
+Once installed, your LLM assistant will automatically load context at
+session start, manage tasks, and save checkpoints when you say natural
+phrases like "wrapping up" or "what were we doing".
+
 ## Build from source
 
 ```bash
