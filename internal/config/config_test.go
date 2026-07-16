@@ -61,3 +61,40 @@ func TestResolveDir(t *testing.T) {
 		})
 	}
 }
+
+func TestConfigDefaults(t *testing.T) {
+	t.Parallel()
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+
+	if cfg.MemEngine() != "memx" {
+		t.Errorf("MemEngine: got %q, want memx", cfg.MemEngine())
+	}
+	if cfg.SessionProvider() != "opencode" {
+		t.Errorf(
+			"SessionProvider: got %q, want opencode",
+			cfg.SessionProvider(),
+		)
+	}
+	if cfg.LLMModel() != "" {
+		t.Errorf("LLMModel: got %q, want empty", cfg.LLMModel())
+	}
+}
+
+func TestConfigEnvOverride(t *testing.T) {
+	// MENTAL_MEM_ENGINE overrides mem.engine via viper AutomaticEnv.
+	t.Setenv("MENTAL_MEM_ENGINE", "myhms")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if cfg.MemEngine() != "myhms" {
+		t.Errorf("MemEngine: got %q, want myhms", cfg.MemEngine())
+	}
+
+	t.Setenv("MENTAL_MEM_ENGINE", "")
+}

@@ -1,0 +1,53 @@
+# mental.toml — Application Configuration
+#
+# This file defines mental's default configuration.
+# Override by placing mental.toml in $MENTAL_DIR:
+#   ~/.local/share/mental/mental.toml
+#
+# Or specify a custom path via:
+#   MENTAL_CONFIG=/path/to/mental.toml mental ...
+#
+# All values shown are the built-in defaults.
+
+# ──────────────────────────────────────────────────────────────────────
+# [mem] — Memory engine configuration
+#
+# Selects which extension handles mental mem commands.
+# The engine must be registered (built-in) or discoverable via
+# $MENTAL_DIR/extensions/<name>/extension.yaml.
+#
+# Built-in engines: memx
+# Override at CLI: mental mem save --engine <name>
+# ──────────────────────────────────────────────────────────────────────
+[mem]
+engine = "memx"
+
+# ──────────────────────────────────────────────────────────────────────
+# [session] — Session provider configuration
+#
+# Selects which extension handles mental session commands and
+# provides session data to mental mem save -a <provider>.
+#
+# Built-in providers: opencode
+# Override at CLI: mental session search -a <name>
+#                  mental mem save -a <name> -s <id>
+# ──────────────────────────────────────────────────────────────────────
+[session]
+provider = "opencode"
+
+# ──────────────────────────────────────────────────────────────────────
+# [llm] — LLM configuration for synthesis operations
+#
+# When set, mental mem save uses this model for LLM synthesis
+# instead of requiring the user to pipe through an external CLI.
+#
+# Format: provider/model (e.g., "anthropic/claude-haiku",
+#         "openai/gpt-4o", "ollama/llama3")
+# API keys come from environment variables (ANTHROPIC_API_KEY, etc.)
+# For Ollama: set OPENAI_API_BASE=http://localhost:11434/v1
+#
+# Override at CLI: mental mem save --model anthropic/claude-haiku
+# Leave empty to always use print/pipe mode (-p flag).
+# ──────────────────────────────────────────────────────────────────────
+[llm]
+model = ""
