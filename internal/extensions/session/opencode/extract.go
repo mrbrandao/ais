@@ -28,7 +28,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/mrbrandao/mental/internal/extensions/mem"
+	"github.com/mrbrandao/mental/internal/extensions/mem/memx"
 )
 
 const clientName = "opencode"
@@ -76,7 +76,7 @@ func Extract(
 	project,
 	dbPath,
 	diffDir string,
-) (mem.SaveInput, error) {
+) (memx.SaveInput, error) {
 	if dbPath == "" {
 		dbPath = defaultDBPath()
 	}
@@ -86,7 +86,7 @@ func Extract(
 
 	row, err := fetchSession(dbPath, sessionID)
 	if err != nil {
-		return mem.SaveInput{}, fmt.Errorf(
+		return memx.SaveInput{}, fmt.Errorf(
 			"opencode extract: %w", err,
 		)
 	}
@@ -99,9 +99,9 @@ func Extract(
 	files := extractFiles(diffDir, sessionID)
 	topics := extractTopics(row.title)
 
-	return mem.SaveInput{
+	return memx.SaveInput{
 		Project: project,
-		Session: mem.SessionMeta{
+		Session: memx.SessionMeta{
 			ID:     row.id,
 			Client: clientName,
 			Model:  "unknown", // model not stored per-session in current schema

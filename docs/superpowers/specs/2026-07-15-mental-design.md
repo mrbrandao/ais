@@ -212,7 +212,7 @@ in the binary as a default. Override by placing a `config.yaml` at:
 `$MENTAL_DIR/extensions/mem/config.yaml`
 
 Changing this file changes mental's behavior without recompilation.
-See `internal/extensions/mem/config.yaml` for the fully annotated default.
+See `internal/extensions/mem/memx/config.yaml` for the fully annotated default.
 
 ---
 

@@ -31,45 +31,59 @@ vocabulary and save input format.
 
 ## What is mental
 
-`mental` is a cross-session memory and AI session manager CLI.
-It persists LLM context across sessions, tracks tasks, and lets
-multiple agents share knowledge through a file-based protocol.
-The extension architecture supports built-in and external plugins.
+`mental` is an AI Session Manager. It searches session history from AI
+assistants and manages session context memory across sessions and providers.
+Extensible via built-in and external extensions.
 
 Binary: `mental` | Module: `github.com/mrbrandao/mental`
 
 ## Architecture
 
 ```
-cmd/                Cobra commands — thin, no logic
+cmd/                    Cobra commands — thin, no logic
+  session/              mental session search
 internal/
-  model/            Session search types (Session, Query)
-  provider/         Provider interface + per-assistant pkg
-    opencode/       OpenCode SQLite backend
-  output/           Formatters: table (pterm), json, plain
-  config/           XDG resolution + viper config
-  extensions/       Extension system
-    extension.go    Extension interface + manifest types
-    manager.go      Registry: internal + XDG external scan
-    runner.go       External subprocess execution
-    mem/            Built-in mem extension
-      config.yaml   Embedded default layout config
-      types.go      Checkpoint, Task, Topic, ProjectContext
+  model/                Session search types (Session, Query)
+  provider/             Provider interface + per-assistant pkg
+    opencode/           OpenCode SQLite backend (session search)
+  output/               Formatters: table (pterm), json, plain
+  config/               XDG resolution + viper config
+  extensions/           Extension system
+    extension.go        Extension interface + Manifest{kind, types}
+    manager.go          Registry: internal + XDG external scan
+    runner.go           External subprocess + JSON protocol
+    discover.go         XDG extension discovery
+    mem/                kind: mem — memory engine extensions
+      memx/             Built-in default memory engine (memx)
+        config.yaml     Embedded YAML-driven layout config
+        types.go        Checkpoint, Task, Topic, ProjectContext
+    session/            kind: session — AI session provider extensions
+      opencode/         Built-in OpenCode provider (search + extract)
 ```
 
-## How to add a new assistant backend
+## Documentation rule
 
-1. Create `internal/provider/<name>/` package
-2. Implement the `Provider` interface:
-   ```go
-   func (p *Provider) Name() string
-   func (p *Provider) Search(
-       ctx context.Context,
-       q model.Query,
-   ) ([]model.Session, error)
-   ```
-3. Register in `cmd/search.go` `resolveProvider()`
-4. Add table-driven tests in `<name>_test.go`
+Every code change must update corresponding docs in the SAME commit:
+
+| Change | Must update |
+|--------|-------------|
+| CLI command or flag | README.md quick start |
+| Architecture | AGENTS.md architecture section |
+| Extension system | docs/dev-guide/extension-development.md |
+| mem protocol | docs/dev-guide/mem-extension.md |
+| Contributing workflow | docs/dev-guide/contributing.md |
+
+## How to add a new session provider (kind: session)
+
+For session search only:
+1. Create `internal/extensions/session/<name>/`
+2. Implement `extensions.Extension` with `Kind: "session"`
+3. Register in `cmd/root.go` via `RegisterBuiltins()`
+4. Wire `-a <name>` routing in `cmd/session/search.go`
+
+For session search that also powers `mental mem save -a <name>`:
+- Also implement `Extract(sessionID, project, ...) (memx.SaveInput, error)`
+- Wire in `cmd/mem.go` `runSaveProvider()` switch
 
 ## How to add a new command
 

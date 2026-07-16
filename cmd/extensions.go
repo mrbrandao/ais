@@ -48,7 +48,7 @@ var extensionsListCmd = &cobra.Command{
 		for _, ext := range all {
 			m := ext.Info()
 			fmt.Printf("%-20s %-12s %s\n",
-				m.Name, m.Type, m.Description,
+				m.Name, m.Kind, m.Description,
 			)
 		}
 		return nil
@@ -82,7 +82,7 @@ var extensionsDescribeCmd = &cobra.Command{
 
 		m := ext.Info()
 		fmt.Printf("Name:        %s\n", m.Name)
-		fmt.Printf("Type:        %s\n", m.Type)
+		fmt.Printf("Type:        %s\n", m.Kind)
 		fmt.Printf("Description: %s\n", m.Description)
 		if m.Version != "" {
 			fmt.Printf("Version:     %s\n", m.Version)

@@ -55,7 +55,7 @@ Cross-session search
 All file and directory names come from `mem.config.yaml`. To change the
 name of any file or directory:
 
-1. Open `internal/extensions/mem/config.yaml`.
+1. Open `internal/extensions/mem/memx/config.yaml`.
 2. Change the relevant key under `layout:`.
 3. Run `make test` — no code changes required.
 
@@ -168,10 +168,10 @@ Existing task IDs are not renamed. New tasks use the updated format.
 If you need a new operation not covered by the YAML config (e.g.,
 `mental mem archive`):
 
-1. Add a new file `internal/extensions/mem/archive.go`.
+1. Add a new file `internal/extensions/mem/memx/archive.go`.
 2. Implement the operation function there.
 3. Register the Cobra command in `cmd/mem.go`.
-4. Add table-driven tests in `internal/extensions/mem/archive_test.go`.
+4. Add table-driven tests in `internal/extensions/mem/memx/archive_test.go`.
 
 Follow the same pattern as the existing `init.go`, `load.go`, etc.
 

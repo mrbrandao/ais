@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/mrbrandao/mental/internal/config"
-	"github.com/mrbrandao/mental/internal/extensions/mem"
+	"github.com/mrbrandao/mental/internal/extensions/mem/memx"
 	"github.com/mrbrandao/mental/internal/extensions/session/opencode"
 )
 
@@ -36,18 +36,18 @@ var memInitCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return mem.Init(cfg, mentalDir, args[0])
+		return memx.Init(cfg, mentalDir, args[0])
 	},
 }
 
 // loadMemConfig loads both the app config (for MENTAL_DIR) and
 // the mem extension config. Called by all mem subcommands.
-func loadMemConfig() (*mem.Config, string, error) {
+func loadMemConfig() (*memx.Config, string, error) {
 	appCfg, err := config.Load()
 	if err != nil {
 		return nil, "", fmt.Errorf("config: %w", err)
 	}
-	memCfg, err := mem.LoadConfig()
+	memCfg, err := memx.LoadConfig()
 	if err != nil {
 		return nil, "", fmt.Errorf("mem config: %w", err)
 	}
@@ -63,11 +63,11 @@ var memLoadCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		ctx, err := mem.Load(cfg, mentalDir, args[0])
+		ctx, err := memx.Load(cfg, mentalDir, args[0])
 		if err != nil {
 			return err
 		}
-		mem.PrintContext(ctx)
+		memx.PrintContext(ctx)
 		return nil
 	},
 }
@@ -148,16 +148,16 @@ func runSave(cmd *cobra.Command, _ []string) error {
 		)
 	}
 
-	input, err := mem.ReadSaveInput(os.Stdin)
+	input, err := memx.ReadSaveInput(os.Stdin)
 	if err != nil {
 		return fmt.Errorf("read stdin: %w", err)
 	}
-	return mem.Save(cfg, mentalDir, input)
+	return memx.Save(cfg, mentalDir, input)
 }
 
 // runSaveProvider extracts session data from the named provider and either
 // prints an LLM prompt (-p) or writes a raw checkpoint directly.
-func runSaveProvider(cfg *mem.Config, mentalDir string) error {
+func runSaveProvider(cfg *memx.Config, mentalDir string) error {
 	switch saveFlagAgent {
 	case "opencode":
 		input, err := opencode.Extract(
@@ -172,7 +172,7 @@ func runSaveProvider(cfg *mem.Config, mentalDir string) error {
 
 		// Print mode: output LLM prompt for piping.
 		if saveFlagPrint {
-			fmt.Print(mem.GeneratePrompt(input))
+			fmt.Print(memx.GeneratePrompt(input))
 			return nil
 		}
 
@@ -191,9 +191,9 @@ func runSaveProvider(cfg *mem.Config, mentalDir string) error {
 // It does NOT update MEMORY.md (requires LLM synthesis for quality).
 // It DOES update topics.yaml so raw checkpoints are searchable.
 func saveRawCheckpoint(
-	cfg *mem.Config,
+	cfg *memx.Config,
 	mentalDir string,
-	input mem.SaveInput,
+	input memx.SaveInput,
 ) error {
 	// Build a raw checkpoint body that is honest about its origin.
 	input.Body = fmt.Sprintf(
@@ -214,12 +214,12 @@ func saveRawCheckpoint(
 	)
 
 	// Ensure the project directory exists (auto-init for raw mode).
-	if err := mem.NewLayout(cfg, mentalDir).
+	if err := memx.NewLayout(cfg, mentalDir).
 		EnsureProjectDirs(input.Project); err != nil {
 		return fmt.Errorf("ensure project dirs: %w", err)
 	}
 
-	return mem.RawSave(cfg, mentalDir, input)
+	return memx.RawSave(cfg, mentalDir, input)
 }
 
 var memSearchCmd = &cobra.Command{
@@ -235,11 +235,11 @@ var memSearchCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		results, err := mem.Search(cfg, mentalDir, project, args[0])
+		results, err := memx.Search(cfg, mentalDir, project, args[0])
 		if err != nil {
 			return err
 		}
-		mem.PrintSearchResults(results, args[0])
+		memx.PrintSearchResults(results, args[0])
 		return nil
 	},
 }
@@ -263,7 +263,7 @@ var memTaskAddCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return mem.AddTask(cfg, mentalDir, project,
+		return memx.AddTask(cfg, mentalDir, project,
 			strings.Join(args, " "),
 		)
 	},
@@ -282,7 +282,7 @@ var memTaskDoneCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return mem.DoneTask(cfg, mentalDir, project, args[0])
+		return memx.DoneTask(cfg, mentalDir, project, args[0])
 	},
 }
 
@@ -298,7 +298,7 @@ var memTaskListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return mem.ListTasks(cfg, mentalDir, project)
+		return memx.ListTasks(cfg, mentalDir, project)
 	},
 }
 

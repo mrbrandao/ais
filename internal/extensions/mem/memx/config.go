@@ -1,4 +1,4 @@
-// Package mem is the built-in memory extension for mental.
+// Package memx is the built-in memory engine for mental for mental.
 //
 // It implements the extensions.Extension interface and manages
 // cross-session memory using the plain-file protocol defined in
@@ -31,7 +31,7 @@
 // To add a task status:
 //   - Append the status string to tasks.statuses.
 //   - The task commands accept it automatically.
-package mem
+package memx
 
 import (
 	_ "embed"

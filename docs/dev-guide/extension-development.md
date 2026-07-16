@@ -5,17 +5,39 @@ binary) and **external** (standalone executables). This guide covers both.
 
 ---
 
+## Extension classification
+
+Extensions are classified by two manifest fields:
+
+- **Kind**: the command group the extension belongs to (`mem`, `session`).
+- **Types**: the specific operations it implements within that kind.
+
+| Kind | Types | CLI flag |
+|------|-------|---------|
+| `mem` | init, load, save, search, task | `--engine <name>` |
+| `session` | search, extract | `-a/--agent <name>` |
+
+---
+
 ## Internal extensions
 
-Internal extensions live in `internal/extensions/<name>/` and are compiled
-into the mental binary. The built-in `mem` extension is an example.
+Internal extensions live in `internal/extensions/<kind>/<name>/` and are
+compiled into the mental binary. The built-in `memx` engine is an example.
+
+```
+internal/extensions/
+├── mem/        ← kind: mem
+│   └── memx/   ← built-in memory engine
+└── session/    ← kind: session
+    └── opencode/ ← built-in OpenCode provider
+```
 
 ### Implementing an internal extension
 
-1. Create a package directory:
+1. Create a package directory under the appropriate kind:
 
    ```
-   internal/extensions/<name>/
+   internal/extensions/<kind>/<name>/
    ├── <name>.go       # implements extensions.Extension
    └── <name>_test.go
    ```
@@ -23,25 +45,26 @@ into the mental binary. The built-in `mem` extension is an example.
 2. Implement the `extensions.Extension` interface:
 
    ```go
-   package myext
+   package myeng
 
    import (
        "context"
        "github.com/mrbrandao/mental/internal/extensions"
    )
 
-   type MyExt struct{}
+   type MyEng struct{}
 
-   func (e *MyExt) Info() extensions.Manifest {
+   func (e *MyEng) Info() extensions.Manifest {
        return extensions.Manifest{
-           Name:        "myext",
-           Type:        "memory",
-           Description: "My custom extension",
+           Name:        "myeng",
+           Kind:        "mem",
+           Types:       []string{"init", "load", "save", "search"},
+           Description: "My custom memory engine",
            Version:     "0.1.0",
        }
    }
 
-   func (e *MyExt) Run(ctx context.Context, args []string) error {
+   func (e *MyEng) Run(ctx context.Context, args []string) error {
        // implementation
        return nil
    }
@@ -78,13 +101,32 @@ $MENTAL_DIR/extensions/
 ### extension.yaml manifest
 
 ```yaml
-name: "Hermes Holographic Memory"
-type: memory          # memory | task | search
-description: "Holographic memory system for mental"
-executable: mental-hermes
+name: hms                                  # identifier for --engine hms
+kind: mem                                  # mem | session
+types:                                     # operations this extension handles
+  - init
+  - load
+  - save
+  - search
+description: "Holographic memory engine for mental"
+executable: mental-hms
 author: YourName
 version: "0.1.0"
 mode: structured      # structured | passthrough
+```
+
+For a session provider extension:
+
+```yaml
+name: claude                               # identifier for -a claude
+kind: session
+types:
+  - search
+description: "Claude Code session provider for mental"
+executable: mental-claude
+author: YourName
+version: "0.1.0"
+mode: structured
 ```
 
 **mode: passthrough** — mental execs the binary and wires stdin/stdout/

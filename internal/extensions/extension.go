@@ -6,19 +6,36 @@
 // Mental supports two kinds of extensions:
 //
 //   - Internal: compiled into the binary, registered at startup.
-//     Code lives in internal/extensions/<name>/.
+//     Code lives in internal/extensions/<kind>/<name>/.
 //   - External: standalone executables discovered at runtime from
 //     $MENTAL_DIR/extensions/<name>/ via an extension.yaml manifest.
 //
 // All extensions satisfy the Extension interface, enabling uniform
 // registration, listing, and dispatch regardless of kind.
 //
+// # Extension Classification
+//
+// Extensions are classified by two fields in their Manifest:
+//
+//   - Kind: the command group the extension belongs to.
+//     Built-in kinds: "mem" (memory engines), "session" (AI providers).
+//     Future kinds may be added without changing this package.
+//
+//   - Types: the specific operations this extension implements within
+//     its kind. A mem extension may implement [init, load, save, search,
+//     task]; a session extension may implement [search, extract].
+//
+// This two-field model maps directly to the CLI:
+//
+//	mental mem save --engine=memx    → kind=mem, type=save, engine=memx
+//	mental session search -a opencode → kind=session, type=search
+//
 // # Adding an Internal Extension
 //
-// 1. Create a package under internal/extensions/<name>/.
-// 2. Implement the Extension interface.
-// 3. Register via Manager.Register in your package's init or New.
-// 4. Call your New function from internal/extensions/manager.go.
+//  1. Create a package under internal/extensions/<kind>/<name>/.
+//  2. Implement the Extension interface.
+//  3. Register via Manager.Register in your package's init or New.
+//  4. Call RegisterBuiltins() from cmd/root.go at startup.
 //
 // # Data Exchange (External Extensions)
 //
@@ -48,12 +65,29 @@ const (
 // Manifest holds the metadata declared in an extension.yaml file.
 // Internal extensions populate this programmatically; external
 // extensions have it parsed from their manifest file.
+//
+// # Kind values
+//
+//	"mem"     — manages memory storage (MEMORY.md, tasks.yaml, topics.yaml)
+//	"session" — connects to an AI assistant to extract session data
+//
+// # Types values (by kind)
+//
+//	kind=mem:     init, load, save, search, task
+//	kind=session: search, extract
 type Manifest struct {
-	// Name is the human-readable extension name.
+	// Name is the extension identifier used in CLI flags.
+	// For --engine: matches a kind=mem extension name.
+	// For -a/--agent: matches a kind=session extension name.
 	Name string `yaml:"name"`
 
-	// Type classifies the extension's role: memory, task, search, etc.
-	Type string `yaml:"type"`
+	// Kind is the command group this extension belongs to.
+	// Valid values: "mem", "session" (more kinds may be added).
+	Kind string `yaml:"kind"`
+
+	// Types lists the specific operations this extension implements
+	// within its kind. Used for capability routing and documentation.
+	Types []string `yaml:"types"`
 
 	// Description is a one-line summary shown in "mental extensions list".
 	Description string `yaml:"description"`
