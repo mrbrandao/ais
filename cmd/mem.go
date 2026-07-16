@@ -312,10 +312,19 @@ func saveRawCheckpoint(
 	return nil
 }
 
+// memSearchOutput holds the -o flag value for mem search.
+var memSearchOutput string
+
 var memSearchCmd = &cobra.Command{
 	Use:   "search <topic>",
 	Short: "Search topics index for matching checkpoints",
-	Args:  cobra.ExactArgs(1),
+	Long: `Search the topics index for checkpoints matching a topic keyword.
+
+Output formats (-o flag, via mentout extension):
+  table  — pterm table (default)
+  json   — JSON array for scripting
+  plain  — tab-separated for pipelines`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := cmd.Flags().GetString("project")
 		if err != nil {
@@ -458,6 +467,10 @@ func init() {
 		"Project to search (required)",
 	)
 	_ = memSearchCmd.MarkFlagRequired("project")
+	memSearchCmd.Flags().StringVarP(
+		&memSearchOutput, "output", "o", "table",
+		"Output: table|json|plain (via mentout extension)",
+	)
 
 	memCmd.AddCommand(memInitCmd)
 	memCmd.AddCommand(memLoadCmd)

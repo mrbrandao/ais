@@ -70,12 +70,34 @@ func (b *builtinOpenCode) Run(
 var _ Extension = (*builtinMem)(nil)
 var _ Extension = (*builtinOpenCode)(nil)
 
+// builtinMentout is the built-in pterm output extension.
+// It provides table, json, plain, and wide output formats.
+// External output extensions can register alongside it as kind: output.
+type builtinMentout struct{}
+
+func (b *builtinMentout) Info() Manifest {
+	return Manifest{
+		Name:        "mentout",
+		Kind:        "output",
+		Types:       []string{"table", "wide", "json", "plain"},
+		Description: "Built-in pterm output extension (mental default)",
+		Version:     "0.1.0",
+	}
+}
+
+func (b *builtinMentout) Run(_ context.Context, _ []string) error {
+	return fmt.Errorf("mentout: output is selected via -o flag on data commands")
+}
+
+var _ Extension = (*builtinMentout)(nil)
+
 // RegisterBuiltins registers all built-in extensions with the global
 // manager. Call once from cmd/root.go at startup.
 func RegisterBuiltins(mentalDir string) error {
 	builtins := []Extension{
 		&builtinMem{},
 		&builtinOpenCode{mentalDir: mentalDir},
+		&builtinMentout{},
 	}
 
 	for _, ext := range builtins {
